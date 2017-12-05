@@ -14,19 +14,45 @@ let decodeBoolean = (dict, key) =>
   |> Js.Option.andThen([@bs] ((json) => Js.Json.decodeBoolean(json)))
   |> Js.Option.getExn;
 
-let decodeResultJson = (json: Js.Json.t, decodeJson: Js.Json.t => 'a) : Js.Array.t('a) => {
+let decodeArray = (dict, key, decodeJson) =>
+  Js.Dict.get(dict, key)
+  |> Js.Option.getExn
+  |> Js.Json.decodeArray
+  |> Js.Option.getExn
+  |> Js.Array.map((json) => json |> Js.Json.decodeObject |> Js.Option.getExn |> decodeJson);
+
+let decodeResultArrayJson =
+    (json: Js.Json.t, decodeJson: Js.Dict.t(Js.Json.t) => 'a)
+    : Js.Array.t('a) => {
   let result =
     json
     |> Js.Json.decodeObject
     |> Js.Option.andThen([@bs] ((p) => Js.Dict.get(p, "result")))
     |> Js.Option.getExn;
   let assets = result |> Js.Json.decodeArray |> Js.Option.getExn;
-  assets |> Js.Array.map(decodeJson)
+  assets |> Js.Array.map((json) => json |> Js.Json.decodeObject |> Js.Option.getExn |> decodeJson)
+};
+
+let decodeResultSingleElementJson = (json: Js.Json.t, decodeJson: Js.Dict.t(Js.Json.t) => 'a) : 'a => {
+  let result =
+    json
+    |> Js.Json.decodeObject
+    |> Js.Option.andThen([@bs] ((p) => Js.Dict.get(p, "result")))
+    |> Js.Option.getExn;
+  let elementJson = result |> Js.Json.decodeObject |> Js.Option.getExn;
+  decodeJson(elementJson)
 };
 
 let fetchArrayFromAPI = (url, decodeSingleElementJson) =>
   Js.Promise.(
     Fetch.fetch(url)
     |> then_(Fetch.Response.json)
-    |> then_((json) => decodeResultJson(json, decodeSingleElementJson) |> resolve)
+    |> then_((json) => decodeResultArrayJson(json, decodeSingleElementJson) |> resolve)
+  );
+
+let fetchSingleElementFromAPI = (url, decodeSingleElementJson) =>
+  Js.Promise.(
+    Fetch.fetch(url)
+    |> then_(Fetch.Response.json)
+    |> then_((json) => decodeResultSingleElementJson(json, decodeSingleElementJson) |> resolve)
   );

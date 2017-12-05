@@ -1,7 +1,7 @@
 open Cryptowatch;
 
 Js.Promise.(
-  fetchPairs()
-  |> then_((assets) => Js.log(assets) |> resolve)
+  fetchAssetDetails("btc")
+  |> then_((asset) => Js.log(asset) |> resolve)
   |> catch((err) => Js.log(err) |> resolve)
 );
