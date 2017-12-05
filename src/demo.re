@@ -6,6 +6,14 @@ type asset = {
   route: string
 };
 
+type pair = {
+  id: int,
+  symbol: string,
+  base: asset,
+  quote: asset,
+  route: string
+};
+
 let decodeInt = (dict, key) =>
   Js.Dict.get(dict, key)
   |> Js.Option.andThen([@bs] ((json) => Js.Json.decodeNumber(json)))
@@ -33,6 +41,17 @@ let decodeAssetJson = (assetJson: Js.Json.t) : asset => {
   }
 };
 
+let decodePairJson = (pairJson: Js.Json.t) : pair => {
+  let pairDict = pairJson |> Js.Json.decodeObject |> Js.Option.getExn;
+  {
+    id: decodeInt(pairDict, "id"),
+    symbol: decodeString(pairDict, "symbol"),
+    base: Js.Dict.get(pairDict, "base") |> Js.Option.getExn |> decodeAssetJson,
+    quote: Js.Dict.get(pairDict, "quote") |> Js.Option.getExn |> decodeAssetJson,
+    route: decodeString(pairDict, "route")
+  }
+};
+
 let decodeAssetJson = (json: Js.Json.t) : Js.Array.t(asset) => {
   let result =
     json
@@ -43,6 +62,16 @@ let decodeAssetJson = (json: Js.Json.t) : Js.Array.t(asset) => {
   assets |> Js.Array.map(decodeAssetJson)
 };
 
+let decodePairJson = (json: Js.Json.t) : Js.Array.t(pair) => {
+  let result =
+    json
+    |> Js.Json.decodeObject
+    |> Js.Option.andThen([@bs] ((p) => Js.Dict.get(p, "result")))
+    |> Js.Option.getExn;
+  let pairs = result |> Js.Json.decodeArray |> Js.Option.getExn;
+  pairs |> Js.Array.map(decodePairJson)
+};
+
 let fetchAssets = () =>
   Js.Promise.(
     Fetch.fetch("https://api.cryptowat.ch/assets")
@@ -50,4 +79,15 @@ let fetchAssets = () =>
     |> then_((json) => Js.log(json |> decodeAssetJson) |> resolve)
   );
 
-Js.Promise.(fetchAssets() |> then_((assets) => Js.log(assets) |> resolve));
+let fetchPairs = () =>
+  Js.Promise.(
+    Fetch.fetch("https://api.cryptowat.ch/pairs")
+    |> then_(Fetch.Response.json)
+    |> then_((json) => Js.log(json |> decodePairJson) |> resolve)
+  );
+
+Js.Promise.(
+  fetchPairs()
+  |> then_((assets) => Js.log(assets) |> resolve)
+  |> catch((err) => Js.log(err) |> resolve)
+);
