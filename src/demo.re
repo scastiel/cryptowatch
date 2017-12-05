@@ -22,6 +22,13 @@ type market = {
   route: string
 };
 
+type exchange = {
+  symbol: string,
+  name: string,
+  route: string,
+  active: Js.boolean
+};
+
 let decodeInt = (dict, key) =>
   Js.Dict.get(dict, key)
   |> Js.Option.andThen([@bs] ((json) => Js.Json.decodeNumber(json)))
@@ -71,6 +78,16 @@ let decodeMarketJson = (marketJson: Js.Json.t) : market => {
   }
 };
 
+let decodeExchangeJson = (exchange: Js.Json.t) : exchange => {
+  let exchangeDict = exchange |> Js.Json.decodeObject |> Js.Option.getExn;
+  {
+    symbol: decodeString(exchangeDict, "symbol"),
+    name: decodeString(exchangeDict, "name"),
+    active: decodeBoolean(exchangeDict, "active"),
+    route: decodeString(exchangeDict, "route")
+  }
+};
+
 let decodeAssetsJson = (json: Js.Json.t) : Js.Array.t(asset) => {
   let result =
     json
@@ -101,6 +118,16 @@ let decodeMarketsJson = (json: Js.Json.t) : Js.Array.t(market) => {
   markets |> Js.Array.map(decodeMarketJson)
 };
 
+let decodeExchangesJson = (json: Js.Json.t) : Js.Array.t(exchange) => {
+  let result =
+    json
+    |> Js.Json.decodeObject
+    |> Js.Option.andThen([@bs] ((p) => Js.Dict.get(p, "result")))
+    |> Js.Option.getExn;
+  let markets = result |> Js.Json.decodeArray |> Js.Option.getExn;
+  markets |> Js.Array.map(decodeExchangeJson)
+};
+
 let fetchAssets = () =>
   Js.Promise.(
     Fetch.fetch("https://api.cryptowat.ch/assets")
@@ -122,8 +149,15 @@ let fetchMarkets = () =>
     |> then_((json) => Js.log(json |> decodeMarketsJson) |> resolve)
   );
 
+let fetchExchanges = () =>
+  Js.Promise.(
+    Fetch.fetch("https://api.cryptowat.ch/exchanges")
+    |> then_(Fetch.Response.json)
+    |> then_((json) => Js.log(json |> decodeExchangesJson) |> resolve)
+  );
+
 Js.Promise.(
-  fetchMarkets()
+  fetchExchanges()
   |> then_((assets) => Js.log(assets) |> resolve)
   |> catch((err) => Js.log(err) |> resolve)
 );
