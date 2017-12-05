@@ -1,21 +1,5 @@
 open Utils;
 
-type asset = {
-  id: int,
-  symbol: string,
-  name: string,
-  fiat: Js.boolean,
-  route: string
-};
-
-type pair = {
-  id: int,
-  symbol: string,
-  base: asset,
-  quote: asset,
-  route: string
-};
-
 type market = {
   id: int,
   exchange: string,
@@ -24,16 +8,34 @@ type market = {
   route: string
 };
 
+type assetMarkets = {
+  base: Js.Array.t(market),
+  quote: Js.Array.t(market)
+};
+
+type asset = {
+  id: int,
+  symbol: string,
+  name: string,
+  fiat: Js.boolean,
+  route: option(string),
+  markets: option(assetMarkets)
+};
+
+type pair = {
+  id: int,
+  symbol: string,
+  base: asset,
+  quote: asset,
+  route: option(string),
+  markets: option(Js.Array.t(market))
+};
+
 type exchange = {
   symbol: string,
   name: string,
   route: string,
   active: Js.boolean
-};
-
-type assetMarkets = {
-  base: Js.Array.t(market),
-  quote: Js.Array.t(market)
 };
 
 type detailledAsset = {
@@ -44,20 +46,13 @@ type detailledAsset = {
   markets: assetMarkets
 };
 
-type detailledPair = {
-  id: int,
-  symbol: string,
-  base: asset,
-  quote: asset,
-  markets: Js.Array.t(market)
-};
-
 let _decodeAssetJson = (assetDict: Js.Dict.t(Js.Json.t)) : asset => {
   id: decodeInt(assetDict, "id"),
   symbol: decodeString(assetDict, "symbol"),
   name: decodeString(assetDict, "name"),
   fiat: decodeBoolean(assetDict, "fiat"),
-  route: decodeString(assetDict, "route")
+  route: Some(decodeString(assetDict, "route")),
+  markets: None
 };
 
 let _decodePairJson = (pairDict) : pair => {
@@ -65,7 +60,8 @@ let _decodePairJson = (pairDict) : pair => {
   symbol: decodeString(pairDict, "symbol"),
   base: decodeObject(pairDict, "base", _decodeAssetJson),
   quote: decodeObject(pairDict, "quote", _decodeAssetJson),
-  route: decodeString(pairDict, "route")
+  route: Some(decodeString(pairDict, "route")),
+  markets: None
 };
 
 let _decodeMarketJson = (marketDict) : market => {
@@ -83,28 +79,32 @@ let _decodeExchangeJson = (exchangeDict) : exchange => {
   route: decodeString(exchangeDict, "route")
 };
 
-let _decodeDetailledAssetJson = (assetDict: Js.Dict.t(Js.Json.t)) : detailledAsset => {
+let _decodeDetailledAssetJson = (assetDict: Js.Dict.t(Js.Json.t)) : asset => {
   id: decodeInt(assetDict, "id"),
   symbol: decodeString(assetDict, "symbol"),
   name: decodeString(assetDict, "name"),
   fiat: decodeBoolean(assetDict, "fiat"),
+  route: None,
   markets:
-    decodeObject(
-      assetDict,
-      "markets",
-      (marketsDict) => {
-        base: decodeArray(marketsDict, "base", _decodeMarketJson),
-        quote: decodeArray(marketsDict, "quote", _decodeMarketJson)
-      }
+    Some(
+      decodeObject(
+        assetDict,
+        "markets",
+        (marketsDict) => {
+          base: decodeArray(marketsDict, "base", _decodeMarketJson),
+          quote: decodeArray(marketsDict, "quote", _decodeMarketJson)
+        }
+      )
     )
 };
 
-let _decodeDetailledPairJson = (pairDict: Js.Dict.t(Js.Json.t)) : detailledPair => {
+let _decodeDetailledPairJson = (pairDict: Js.Dict.t(Js.Json.t)) : pair => {
   id: decodeInt(pairDict, "id"),
   symbol: decodeString(pairDict, "symbol"),
   base: decodeObject(pairDict, "base", _decodeAssetJson),
   quote: decodeObject(pairDict, "quote", _decodeAssetJson),
-  markets: decodeArray(pairDict, "markets", _decodeMarketJson)
+  route: None,
+  markets: Some(decodeArray(pairDict, "markets", _decodeMarketJson))
 };
 
 let fetchAssets = () => fetchArrayFromAPI("https://api.cryptowat.ch/assets", _decodeAssetJson);
