@@ -44,6 +44,14 @@ type detailledAsset = {
   markets: assetMarkets
 };
 
+type detailledPair = {
+  id: int,
+  symbol: string,
+  base: asset,
+  quote: asset,
+  markets: Js.Array.t(market)
+};
+
 let _decodeAssetJson = (assetDict: Js.Dict.t(Js.Json.t)) : asset => {
   id: decodeInt(assetDict, "id"),
   symbol: decodeString(assetDict, "symbol"),
@@ -103,6 +111,24 @@ let _decodeDetailledAssetJson = (assetDict: Js.Dict.t(Js.Json.t)) : detailledAss
   }
 };
 
+let _decodeDetailledPairJson = (pairDict: Js.Dict.t(Js.Json.t)) : detailledPair => {
+  id: decodeInt(pairDict, "id"),
+  symbol: decodeString(pairDict, "symbol"),
+  base:
+    Js.Dict.get(pairDict, "base")
+    |> Js.Option.getExn
+    |> Js.Json.decodeObject
+    |> Js.Option.getExn
+    |> _decodeAssetJson,
+  quote:
+    Js.Dict.get(pairDict, "quote")
+    |> Js.Option.getExn
+    |> Js.Json.decodeObject
+    |> Js.Option.getExn
+    |> _decodeAssetJson,
+  markets: decodeArray(pairDict, "markets", _decodeMarketJson)
+};
+
 let fetchAssets = () => fetchArrayFromAPI("https://api.cryptowat.ch/assets", _decodeAssetJson);
 
 let fetchPairs = () => fetchArrayFromAPI("https://api.cryptowat.ch/pairs", _decodePairJson);
@@ -117,3 +143,6 @@ let fetchAssetDetails = (assetId) =>
     "https://api.cryptowat.ch/assets/" ++ assetId,
     _decodeDetailledAssetJson
   );
+
+let fetchPairDetails = (pairId) =>
+  fetchSingleElementFromAPI("https://api.cryptowat.ch/pairs/" ++ pairId, _decodeDetailledPairJson);
