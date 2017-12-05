@@ -21,6 +21,13 @@ let decodeArray = (dict, key, decodeJson) =>
   |> Js.Option.getExn
   |> Js.Array.map((json) => json |> Js.Json.decodeObject |> Js.Option.getExn |> decodeJson);
 
+let decodeObject = (dict, key, decodeJson) =>
+  Js.Dict.get(dict, key)
+  |> Js.Option.getExn
+  |> Js.Json.decodeObject
+  |> Js.Option.getExn
+  |> decodeJson;
+
 let decodeResultArrayJson =
     (json: Js.Json.t, decodeJson: Js.Dict.t(Js.Json.t) => 'a)
     : Js.Array.t('a) => {

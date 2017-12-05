@@ -63,18 +63,8 @@ let _decodeAssetJson = (assetDict: Js.Dict.t(Js.Json.t)) : asset => {
 let _decodePairJson = (pairDict) : pair => {
   id: decodeInt(pairDict, "id"),
   symbol: decodeString(pairDict, "symbol"),
-  base:
-    Js.Dict.get(pairDict, "base")
-    |> Js.Option.getExn
-    |> Js.Json.decodeObject
-    |> Js.Option.getExn
-    |> _decodeAssetJson,
-  quote:
-    Js.Dict.get(pairDict, "quote")
-    |> Js.Option.getExn
-    |> Js.Json.decodeObject
-    |> Js.Option.getExn
-    |> _decodeAssetJson,
+  base: decodeObject(pairDict, "base", _decodeAssetJson),
+  quote: decodeObject(pairDict, "quote", _decodeAssetJson),
   route: decodeString(pairDict, "route")
 };
 
@@ -94,38 +84,26 @@ let _decodeExchangeJson = (exchangeDict) : exchange => {
 };
 
 let _decodeDetailledAssetJson = (assetDict: Js.Dict.t(Js.Json.t)) : detailledAsset => {
-  let marketsObj =
-    Js.Dict.get(assetDict, "markets")
-    |> Js.Option.getExn
-    |> Js.Json.decodeObject
-    |> Js.Option.getExn;
-  {
-    id: decodeInt(assetDict, "id"),
-    symbol: decodeString(assetDict, "symbol"),
-    name: decodeString(assetDict, "name"),
-    fiat: decodeBoolean(assetDict, "fiat"),
-    markets: {
-      base: decodeArray(marketsObj, "base", _decodeMarketJson),
-      quote: decodeArray(marketsObj, "quote", _decodeMarketJson)
-    }
-  }
+  id: decodeInt(assetDict, "id"),
+  symbol: decodeString(assetDict, "symbol"),
+  name: decodeString(assetDict, "name"),
+  fiat: decodeBoolean(assetDict, "fiat"),
+  markets:
+    decodeObject(
+      assetDict,
+      "markets",
+      (marketsDict) => {
+        base: decodeArray(marketsDict, "base", _decodeMarketJson),
+        quote: decodeArray(marketsDict, "quote", _decodeMarketJson)
+      }
+    )
 };
 
 let _decodeDetailledPairJson = (pairDict: Js.Dict.t(Js.Json.t)) : detailledPair => {
   id: decodeInt(pairDict, "id"),
   symbol: decodeString(pairDict, "symbol"),
-  base:
-    Js.Dict.get(pairDict, "base")
-    |> Js.Option.getExn
-    |> Js.Json.decodeObject
-    |> Js.Option.getExn
-    |> _decodeAssetJson,
-  quote:
-    Js.Dict.get(pairDict, "quote")
-    |> Js.Option.getExn
-    |> Js.Json.decodeObject
-    |> Js.Option.getExn
-    |> _decodeAssetJson,
+  base: decodeObject(pairDict, "base", _decodeAssetJson),
+  quote: decodeObject(pairDict, "quote", _decodeAssetJson),
   markets: decodeArray(pairDict, "markets", _decodeMarketJson)
 };
 
