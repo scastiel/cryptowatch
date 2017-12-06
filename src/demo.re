@@ -1,7 +1,7 @@
 open Crypto;
 
 Js.Promise.(
-  fetchMarketDetailsPrice("bitfinex", "btcusd")
+  fetchAssets()
   |> then_((asset) => Js.log(asset) |> resolve)
   |> catch((err) => Js.log(err) |> resolve)
 );

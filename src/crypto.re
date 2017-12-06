@@ -1,5 +1,7 @@
 open Utils;
 
+let baseUrl = "https://api.cryptowat.ch/";
+
 type market = {
   id: int,
   exchange: string,
@@ -153,32 +155,28 @@ let _decodeDetailledMarketSummary = (summaryDict: Js.Dict.t(Js.Json.t)) : market
   volume: decodeFloat(summaryDict, "volume")
 };
 
-let fetchAssets = () => fetchArrayFromAPI("https://api.cryptowat.ch/assets", _decodeAssetJson);
+let fetchAssets = () => fetchArrayFromAPI(makeUrl(baseUrl, ["assets"]), _decodeAssetJson);
 
-let fetchPairs = () => fetchArrayFromAPI("https://api.cryptowat.ch/pairs", _decodePairJson);
+let fetchPairs = () => fetchArrayFromAPI(makeUrl(baseUrl, ["pairs"]), _decodePairJson);
 
-let fetchMarkets = () => fetchArrayFromAPI("https://api.cryptowat.ch/markets", _decodeMarketJson);
+let fetchMarkets = () => fetchArrayFromAPI(makeUrl(baseUrl, ["markets"]), _decodeMarketJson);
 
-let fetchExchanges = () =>
-  fetchArrayFromAPI("https://api.cryptowat.ch/exchanges", _decodeExchangeJson);
+let fetchExchanges = () => fetchArrayFromAPI(makeUrl(baseUrl, ["exchanges"]), _decodeExchangeJson);
 
 let fetchAssetDetails = (assetId) =>
-  fetchSingleElementFromAPI(
-    "https://api.cryptowat.ch/assets/" ++ assetId,
-    _decodeDetailledAssetJson
-  );
+  fetchSingleElementFromAPI(makeUrl(baseUrl, ["assets", assetId]), _decodeDetailledAssetJson);
 
 let fetchPairDetails = (pairId) =>
-  fetchSingleElementFromAPI("https://api.cryptowat.ch/pairs/" ++ pairId, _decodeDetailledPairJson);
+  fetchSingleElementFromAPI(makeUrl(baseUrl, ["pairs", pairId]), _decodeDetailledPairJson);
 
 let fetchMarketDetailsSummary = (exchangeSymbol, pairSymbol) =>
   fetchSingleElementFromAPI(
-    "https://api.cryptowat.ch/markets/" ++ exchangeSymbol ++ "/" ++ pairSymbol ++ "/summary",
+    makeUrl(baseUrl, ["markets", exchangeSymbol, pairSymbol, "summary"]),
     _decodeDetailledMarketSummary
   );
 
 let fetchMarketDetailsPrice = (exchangeSymbol, pairSymbol) =>
   fetchSingleElementFromAPI(
-    "https://api.cryptowat.ch/markets/" ++ exchangeSymbol ++ "/" ++ pairSymbol ++ "/price",
+    makeUrl(baseUrl, ["markets", exchangeSymbol, pairSymbol, "price"]),
     _decodeDetailledMarketPrice
   );

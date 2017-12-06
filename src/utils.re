@@ -1,3 +1,13 @@
+let makeUrl = (baseUrl, args) => {
+  let rec join = (list) =>
+    switch list {
+    | [] => ""
+    | [fst] => fst
+    | [fst, ...rst] => fst ++ "/" ++ join(rst)
+    };
+  baseUrl ++ join(args)
+};
+
 let decodeInt = (dict, key) =>
   Js.Dict.get(dict, key)
   |> Js.Option.andThen([@bs] ((json) => Js.Json.decodeNumber(json)))
