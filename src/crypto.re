@@ -1,48 +1,8 @@
 open Utils;
 
+include Types;
+
 let baseUrl = "https://api.cryptowat.ch/";
-
-type market = {
-  .
-  "id": int, "exchange": string, "pair": string, "active": Js.boolean, "route": string
-};
-
-type assetMarkets = {. "base": Js.Array.t(market), "quote": Js.Array.t(market)};
-
-type asset = {
-  .
-  "id": int,
-  "symbol": string,
-  "name": string,
-  "fiat": Js.boolean,
-  "route": option(string),
-  "markets": option(assetMarkets)
-};
-
-type pair = {
-  .
-  "id": int,
-  "symbol": string,
-  "base": asset,
-  "quote": asset,
-  "route": option(string),
-  "markets": option(Js.Array.t(market))
-};
-
-type exchange = {. "symbol": string, "name": string, "route": string, "active": Js.boolean};
-
-type detailledAsset = {
-  .
-  "id": int, "symbol": string, "name": string, "fiat": Js.boolean, "markets": assetMarkets
-};
-
-type change = {. "percentage": float, "absolute": float};
-
-type price = {. "last": float, "high": float, "low": float, "change": change};
-
-type marketSummary = {. "price": price, "volume": float};
-
-type marketPrice = {. "price": float};
 
 let _decodeAssetJson = (assetDict: Js.Dict.t(Js.Json.t)) : asset => {
   "id": decodeInt(assetDict, "id"),
@@ -140,13 +100,19 @@ let fetchMarkets = () => fetchArrayFromAPI(makeUrl(baseUrl, ["markets"]), _decod
 
 let fetchExchanges = () => fetchArrayFromAPI(makeUrl(baseUrl, ["exchanges"]), _decodeExchangeJson);
 
-let fetchAssetDetails = (assetId) =>
-  fetchSingleElementFromAPI(makeUrl(baseUrl, ["assets", assetId]), _decodeDetailledAssetJson);
+let fetchAssetDetails = (~assetId) =>
+  fetchSingleElementFromAPI(
+    makeUrl(baseUrl, ["assets", string_of_int(assetId)]),
+    _decodeDetailledAssetJson
+  );
 
-let fetchPairDetails = (pairId) =>
-  fetchSingleElementFromAPI(makeUrl(baseUrl, ["pairs", pairId]), _decodeDetailledPairJson);
+let fetchPairDetails = (~pairId) =>
+  fetchSingleElementFromAPI(
+    makeUrl(baseUrl, ["pairs", string_of_int(pairId)]),
+    _decodeDetailledPairJson
+  );
 
-let fetchMarketDetailsSummary = (exchangeSymbol, pairSymbol) =>
+let fetchMarketDetailsSummary = (~exchangeSymbol, ~pairSymbol) =>
   fetchSingleElementFromAPI(
     makeUrl(baseUrl, ["markets", exchangeSymbol, pairSymbol, "summary"]),
     _decodeDetailledMarketSummary
