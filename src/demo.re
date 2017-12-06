@@ -1,4 +1,4 @@
-open Cryptowatch;
+open Crypto;
 
 Js.Promise.(
   fetchPairDetails("btcusd")
