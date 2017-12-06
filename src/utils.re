@@ -4,6 +4,11 @@ let decodeInt = (dict, key) =>
   |> Js.Option.getExn
   |> int_of_float;
 
+let decodeFloat = (dict, key) =>
+  Js.Dict.get(dict, key)
+  |> Js.Option.andThen([@bs] ((json) => Js.Json.decodeNumber(json)))
+  |> Js.Option.getExn;
+
 let decodeString = (dict, key) =>
   Js.Dict.get(dict, key)
   |> Js.Option.andThen([@bs] ((json) => Js.Json.decodeString(json)))

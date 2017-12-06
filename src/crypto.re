@@ -46,6 +46,25 @@ type detailledAsset = {
   markets: assetMarkets
 };
 
+type change = {
+  percentage: float,
+  absolute: float
+};
+
+type price = {
+  last: float,
+  high: float,
+  low: float,
+  change
+};
+
+type marketSummary = {
+  price,
+  volume: float
+};
+
+type marketPrice = {price: float};
+
 let _decodeAssetJson = (assetDict: Js.Dict.t(Js.Json.t)) : asset => {
   id: decodeInt(assetDict, "id"),
   symbol: decodeString(assetDict, "symbol"),
@@ -107,6 +126,33 @@ let _decodeDetailledPairJson = (pairDict: Js.Dict.t(Js.Json.t)) : pair => {
   markets: Some(decodeArray(pairDict, "markets", _decodeMarketJson))
 };
 
+let _decodeDetailledMarketPrice = (priceDict: Js.Dict.t(Js.Json.t)) : marketPrice => {
+  price: decodeFloat(priceDict, "price")
+};
+
+let _decodeDetailledMarketSummary = (summaryDict: Js.Dict.t(Js.Json.t)) : marketSummary => {
+  price:
+    decodeObject(
+      summaryDict,
+      "price",
+      (priceDict) => {
+        last: decodeFloat(priceDict, "last"),
+        high: decodeFloat(priceDict, "high"),
+        low: decodeFloat(priceDict, "low"),
+        change:
+          decodeObject(
+            priceDict,
+            "change",
+            (changeDict) => {
+              percentage: decodeFloat(changeDict, "percentage"),
+              absolute: decodeFloat(changeDict, "absolute")
+            }
+          )
+      }
+    ),
+  volume: decodeFloat(summaryDict, "volume")
+};
+
 let fetchAssets = () => fetchArrayFromAPI("https://api.cryptowat.ch/assets", _decodeAssetJson);
 
 let fetchPairs = () => fetchArrayFromAPI("https://api.cryptowat.ch/pairs", _decodePairJson);
@@ -124,3 +170,15 @@ let fetchAssetDetails = (assetId) =>
 
 let fetchPairDetails = (pairId) =>
   fetchSingleElementFromAPI("https://api.cryptowat.ch/pairs/" ++ pairId, _decodeDetailledPairJson);
+
+let fetchMarketDetailsSummary = (exchangeSymbol, pairSymbol) =>
+  fetchSingleElementFromAPI(
+    "https://api.cryptowat.ch/markets/" ++ exchangeSymbol ++ "/" ++ pairSymbol ++ "/summary",
+    _decodeDetailledMarketSummary
+  );
+
+let fetchMarketDetailsPrice = (exchangeSymbol, pairSymbol) =>
+  fetchSingleElementFromAPI(
+    "https://api.cryptowat.ch/markets/" ++ exchangeSymbol ++ "/" ++ pairSymbol ++ "/price",
+    _decodeDetailledMarketPrice
+  );
